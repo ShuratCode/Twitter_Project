@@ -1,15 +1,16 @@
-import csv
 import re
 import string
-import pandas as pd
+from collections import Counter
+import pprint
 
+import pandas as pd
 from nltk.corpus import stopwords
 
 
 class DataPresentation:
 
     def __init__(self):
-        self.__DB_path = './gender-classifier-DFE-791531.csv'
+        self.__DB_path = 'gender-classifier-DFE-791531.csv'
 
         self.__emoticons_str = r"""
         (?:
@@ -32,22 +33,16 @@ class DataPresentation:
 
         self.__tokens_re = re.compile(r'(' + '|'.join(self.__regex_str) + ')', re.VERBOSE | re.IGNORECASE)
         self.__emoticon_re = re.compile(r'^' + self.__emoticons_str + '$', re.VERBOSE | re.IGNORECASE)
-        data_frame = self.read_csv()
-        terms_male, terms_female = self.build_terms(data_frame)
-
+        self.data_frame = None
 
     def read_csv(self):
         """
-        Read the csv file and transform it to data frame. Will save only the text and gender fields and clean up a little
-        :return: data frame that represent the csv file
+        Read the csv file and present it
+        :return: representation of the
         """
-
-        data = pd.read_csv(self.__DB_path, encoding='utf8')
-        data_frame = data[['text', 'gender']]
-        data_frame = data_frame.dropna(inplace=True)
-        data_frame = data_frame[data_frame.gender != 'unknown']
-        return data_frame
-
+        data = pd.read_csv(self.__DB_path, encoding='latin-1')
+        pd.value_counts(data['gender']).plot.bar()
+        return data
 
     def build_terms(self, data_frame):
 
@@ -58,6 +53,7 @@ class DataPresentation:
         """
         terms_male = []
         terms_female = []
+        terms_brand = []
         punctuation = list(string.punctuation)
         stop_words = stopwords.words('english') + punctuation + ['rt', 'via']
 
@@ -69,7 +65,9 @@ class DataPresentation:
                         terms_male.append(token)
                     if line['gender'] == 'female':
                         terms_female.append(token)
-        return terms_male, terms_female
+                    if line['gender'] == 'brand':
+                        terms_brand.append(token)
+        return terms_male, terms_female, terms_brand
 
     def tokenize(self, tweet_text):
         """
@@ -85,3 +83,35 @@ class DataPresentation:
         if lowercase:
             tokens = [token if self.__emoticon_re.search(token) else token.lower() for token in tokens]
         return tokens
+
+    def data_to_df(self, data):
+        """
+        convert the data to data frame and clean it up
+        :param data: data read from csv file
+        :return: clean data frame
+        """
+        self.data_frame = data[['text', 'gender']]
+        self.data_frame.dropna(inplace=True)
+        self.data_frame = self.data_frame[self.data_frame.gender != 'unknown']
+
+    def print_common(self):
+        terms_male, terms_female, terms_brand = self.build_terms(self.data_frame)
+
+        pp = pprint.PrettyPrinter()
+
+        count_male = Counter()
+        count_male.update(terms_male)
+        print('Male most common terms: ', sum(count_male.values()))
+        pp.pprint(count_male.most_common(20))
+        print('=' * 80)
+
+        count_female = Counter()
+        count_female.update(terms_female)
+        print('Female most common terms: ', sum(count_female.values()))
+        pp.pprint(count_female.most_common(20))
+        print('=' * 80)
+
+        count_brand = Counter()
+        count_brand.update(terms_brand)
+        print('Brand most common terms: ', sum(count_brand.values()))
+        pp.pprint(count_brand.most_common(20))
