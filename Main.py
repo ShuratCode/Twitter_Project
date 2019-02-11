@@ -1,6 +1,4 @@
-fr
 import warnings
-from collections import Counter
 
 from DataPresentation import DataPresentation
 

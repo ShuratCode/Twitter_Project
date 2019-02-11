@@ -45,7 +45,6 @@ class DataPresentation:
         return data
 
     def build_terms(self, data_frame):
-
         """
         Build lists of terms used by male/female/brand
         :param: data_frame data frame that holds the text and gender fields of the DB
@@ -79,6 +78,12 @@ class DataPresentation:
         return self.__tokens_re.findall(tweet_text)
 
     def preprocess(self, tweet_text, lowercase=False):
+        """
+        Pre-process the text and tokens.
+        :param tweet_text: the text to process
+        :param lowercase: boolean, true if wanted to change all text to lowercase, false otherwise
+        :return: list of clean tokens
+        """
         tokens = self.tokenize(tweet_text)
         if lowercase:
             tokens = [token if self.__emoticon_re.search(token) else token.lower() for token in tokens]
@@ -95,6 +100,10 @@ class DataPresentation:
         self.data_frame = self.data_frame[self.data_frame.gender != 'unknown']
 
     def print_common(self):
+        """
+        Working on the data frame to create list of terms for male, female and brand.
+        Print the top 20 of each list
+        """
         terms_male, terms_female, terms_brand = self.build_terms(self.data_frame)
 
         pp = pprint.PrettyPrinter()
@@ -115,3 +124,4 @@ class DataPresentation:
         count_brand.update(terms_brand)
         print('Brand most common terms: ', sum(count_brand.values()))
         pp.pprint(count_brand.most_common(20))
+
