@@ -2,6 +2,7 @@ import re
 import string
 from collections import Counter
 import pprint
+from nltk.stem import PorterStemmer
 
 import pandas as pd
 from nltk.corpus import stopwords
@@ -34,6 +35,7 @@ class DataPresentation:
         self.__tokens_re = re.compile(r'(' + '|'.join(self.__regex_str) + ')', re.VERBOSE | re.IGNORECASE)
         self.__emoticon_re = re.compile(r'^' + self.__emoticons_str + '$', re.VERBOSE | re.IGNORECASE)
         self.data_frame = None
+        self.ps = PorterStemmer()
 
     def read_csv(self):
         """
@@ -60,6 +62,7 @@ class DataPresentation:
             tokens = self.preprocess(line['text'], lowercase=True)
             for token in tokens:
                 if token not in stop_words:
+                    token = self.ps.stem(token)
                     if line['gender'] == 'male':
                         terms_male.append(token)
                     if line['gender'] == 'female':
