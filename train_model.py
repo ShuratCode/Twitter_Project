@@ -1,22 +1,26 @@
 import operator
 from time import time
 
+import keras
 import numpy
 from keras.layers import Dense
 from keras.models import Sequential
+from keras_preprocessing.text import Tokenizer
 from sklearn import metrics
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import SGDClassifier, Perceptron
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import LabelEncoder
 
 
 class TrainModels:
     def __init__(self, data_frame):
-        self.train, self.test = train_test_split(data_frame, test_size=0.2)
+        self.df = data_frame
+        self.train, self.test = train_test_split(data_frame, test_size=0.2)  # split the data frame to train and test
         self.__form_to_text()
         self.__clfs = {"SVM": SGDClassifier(), "Perceptron": Perceptron()}
-        self.X_train, self.X_test = self.__tf_idf_feature_extraction()
+        self.X_train, self.X_test = self.__tf_idf_feature_extraction()  # extract features from the training data
         self.Y_train, self.Y_test = self.train.gender, self.test.gender
         numpy.random.seed(7)
 
@@ -70,7 +74,7 @@ class TrainModels:
 
     def train_models(self):
         """
-        Train the model and compare them
+        Train the model and compare the accuracy
         :return: the best model
         """
         scores = {}
@@ -82,7 +86,7 @@ class TrainModels:
         best_params = self.optimize(self.__clfs[best])
         simple_score, simple_model = self.__run_best_model(best_params, best)
         keras_model, keras_score = self.__train_sequential()
-        if keras_score >= simple_score:
+        if keras_score >= simple_score: # check if the best simple model or the CNN model
             return keras_model
         else:
             return simple_model
@@ -150,18 +154,30 @@ class TrainModels:
         Train the Sequential model with embedding dens and LSTM layers
         :return: the model and its score
         """
-        x_train = numpy.array(self.train.text)
-        y_train = numpy.array(self.train.gender)
-        x_test = numpy.array(self.test.text)
-        y_test = numpy.array(self.test.gender)
-        # keras_X_train = sequence.pad_sequences(self.train.text, maxlen=max_text_length)
-        # keras_X_test = sequence.pad_sequences(self.test.text, maxlen=max_text_length)
+        x_train, x_test, y_train, y_test = self.__build_matrix()
         model = Sequential()
-        model.add(Dense(output_dim=6, init='uniform', activation='relu', input_dim=1))
+        model.add(Dense(output_dim=6, init='uniform', activation='relu', input_dim=2000))
         model.add(Dense(output_dim=6, init='uniform', activation='relu'))
-        model.add(Dense(output_dim=1, init='uniform', activation='sigmoid'))
+        model.add(Dense(output_dim=3, init='uniform', activation='sigmoid'))
         model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
         model.fit(x_train, y_train, epochs=5)
         keras_score = model.evaluate(x_test, y_test, verbose=0)
         print("Accuracy: %.2f%%" % (keras_score[1] * 100))
         return model, keras_score[1]
+
+    def __build_matrix(self):
+        """
+        Transform the data frame to a matrix for the CNN training.
+        :return: matrix for: x_train, x_test, y_train, y_test
+        """
+        lb_make = LabelEncoder()
+        tokenizer = Tokenizer(num_words=2000)
+        x_array_train = numpy.asarray(self.train['text'])
+        x_array_test = numpy.asarray(self.test['text'])
+        x_train_matrix = tokenizer.texts_to_matrix(x_array_train, mode='binary')
+        x_test_matrix = tokenizer.texts_to_matrix(x_array_test, mode='binary')
+        y_train_numbers = lb_make.fit_transform(self.Y_train)
+        y_test_numbers = lb_make.fit_transform(self.Y_test)
+        y_train_matrix = keras.utils.to_categorical(y_train_numbers, 3)
+        y_test_matrix = keras.utils.to_categorical(y_test_numbers, 3)
+        return x_train_matrix, x_test_matrix, y_train_matrix, y_test_matrix
