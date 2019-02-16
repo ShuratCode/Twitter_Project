@@ -162,7 +162,7 @@ class TrainModels:
         model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
         model.fit(x_train, y_train, epochs=5)
         keras_score = model.evaluate(x_test, y_test, verbose=0)
-        print("Accuracy: %.2f%%" % (keras_score[1] * 100))
+        print("Accuracy: %.2f" % (keras_score[1]))
         return model, keras_score[1]
 
     def __build_matrix(self):
