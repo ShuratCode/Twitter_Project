@@ -2,7 +2,11 @@ import re
 import string
 from collections import Counter
 import pprint
+import tweepy
+import json
 from nltk.stem import PorterStemmer
+from keras_preprocessing.text import Tokenizer
+
 
 import pandas as pd
 from nltk.corpus import stopwords
@@ -128,3 +132,74 @@ class DataPresentation:
         print('Brand most common terms: ', sum(count_brand.values()))
         pp.pprint(count_brand.most_common(20))
 
+    @staticmethod
+    def find_most_common_country(data):
+
+        countries = data['tweet_location'].value_counts()
+        top_countries = []
+        for loc, num in countries.items():
+            top_countries.append((loc, num))
+
+        return top_countries[0:6]
+
+    @staticmethod
+    def collect_tweets(file_location):
+
+        api_key = "GXRCrOUdw2q35n8DduLSWYCGL"
+        api_secret_key = "YnI09Fgy07LqPVyHPkx0NlodNoqyEuP3JvCSdlR1vKseszxsM3"
+
+        access_token = "734660944920465408-ORnK69HUaAKirszN1pW12XfzBGyghrB"
+        access_token_secret = "WrgnSATTGPVP7yJVQvCmC0vqZtGUHAtzTgqRcmQ3Uhvyo"
+
+        authenticator = tweepy.OAuthHandler(api_key, api_secret_key)
+        authenticator.set_access_token(access_token, access_token_secret)
+        twitter_api = tweepy.API(authenticator)
+
+        stream_listener = TwitterStreamer(file_location, twitter_api)
+        stream_listener = tweepy.Stream(auth=twitter_api.auth, listener=TwitterStreamer)
+        # stream_listener.filter(locations=[-0.510375, 51.28676, 0.334015, 51.691874])
+        stream_listener.filter(track=['python'], is_async=False)
+
+    def process_tweets(self, file_location):
+        """
+        Processes the tweets in the same manner as in Question 1
+        :param file_location: Location of the tweets json
+        """
+        tweet_data = []
+        tweets_json = open(file_location, 'r')
+
+        for line in tweets_json:
+            try:
+                curr_tweet = json.loads(line)
+                tweet_data.append(curr_tweet['text'])
+            except Exception as ex:
+                print(ex)
+                continue
+
+        parsed_tweets = []
+        for dirty_tweet in tweet_data:
+            parsed_tweets.append(Tokenizer(dirty_tweet)
+
+class TwitterStreamer(tweepy.StreamListener):
+
+    def __init__(self, tweet_file, twitter_api=None):
+        super(TwitterStreamer, self).__init__()
+        self.file_location = tweet_file
+        self.num_of_tweets = 0
+
+    def on_data(self, data):
+        print("Entered on data")
+        if self.num_of_tweets < 15000:
+            try:
+                with open(self.file_location, 'a') as tweets:
+                    tweets.write(data)
+                    self.num_of_tweets += 1
+                    return True
+            except BaseException as bex:
+                print("Error on_data: " + str(bex))
+
+    def on_error(self, status):
+        if status == 420:
+            # returning False in on_data disconnects the stream
+            return False
+        return True
