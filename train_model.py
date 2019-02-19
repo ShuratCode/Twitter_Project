@@ -85,7 +85,7 @@ class TrainModels:
         best = self.__get_best_score(scores)
         best_params = self.optimize(self.__clfs[best])
         simple_score, simple_model = self.__run_best_model(best_params, best)
-        keras_model, keras_score = self.__train_sequential()
+        keras_model, keras_score = self.train_sequential()
         if keras_score >= simple_score: # check if the best simple model or the CNN model
             return keras_model
         else:
@@ -149,12 +149,12 @@ class TrainModels:
         print('=' * 80)
         return gs_clf.best_params_
 
-    def __train_sequential(self):
+    def train_sequential(self):
         """
         Train the Sequential model with embedding dens and LSTM layers
         :return: the model and its score
         """
-        x_train, x_test, y_train, y_test = self.__build_matrix()
+        x_train, x_test, y_train, y_test = self.build_matrix()
         model = Sequential()
         model.add(Dense(output_dim=6, init='uniform', activation='relu', input_dim=2000))
         model.add(Dense(output_dim=6, init='uniform', activation='relu'))
@@ -165,7 +165,7 @@ class TrainModels:
         print("Accuracy: %.2f" % (keras_score[1]))
         return model, keras_score[1]
 
-    def __build_matrix(self):
+    def build_matrix(self):
         """
         Transform the data frame to a matrix for the CNN training.
         :return: matrix for: x_train, x_test, y_train, y_test

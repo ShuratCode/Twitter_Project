@@ -1,3 +1,4 @@
+import operator
 import re
 import string
 from collections import Counter
@@ -5,10 +6,8 @@ import pprint
 import tweepy
 import json
 from nltk.stem import PorterStemmer
-from keras_preprocessing.text import Tokenizer
-
-
 import pandas as pd
+import numpy
 from nltk.corpus import stopwords
 
 
@@ -41,13 +40,14 @@ class DataPresentation:
         self.data_frame = None
         self.ps = PorterStemmer()
 
-    def read_csv(self):
+    def read_csv(self, print_graph=True):
         """
         Read the csv file and present it
         :return: representation of the
         """
         data = pd.read_csv(self.__DB_path, encoding='latin-1')
-        pd.value_counts(data['gender']).plot.bar()
+        if print_graph:
+            pd.value_counts(data['gender']).plot.bar()
         return data
 
     def build_terms(self, data_frame):
@@ -105,6 +105,7 @@ class DataPresentation:
         self.data_frame = data[['text', 'gender']]
         self.data_frame.dropna(inplace=True)
         self.data_frame = self.data_frame[self.data_frame.gender != 'unknown']
+        return self.data_frame
 
     def print_common(self):
         """
@@ -133,20 +134,22 @@ class DataPresentation:
         pp.pprint(count_brand.most_common(20))
 
     @staticmethod
-    def find_most_common_country(data):
+    def find_most_common_country(data, top):
 
         countries = data['tweet_location'].value_counts()
         top_countries = []
         for loc, num in countries.items():
             top_countries.append((loc, num))
-
-        return top_countries[0:6]
+        if top < len(top_countries):
+            return top_countries[0:top]
+        else:
+            return top_countries
 
     @staticmethod
     def collect_tweets(file_location):
 
         api_key = "GXRCrOUdw2q35n8DduLSWYCGL"
-        api_secret_key = "YnI09Fgy07LqPVyHPkx0NlodNoqyEuP3JvCSdlR1vKseszxsM3"
+        api_secret_key = "Ynl09Fgy07LqPVyHPkx0NlodNoqyEuP3JvCSdIR1vKseszxdM3"
 
         access_token = "734660944920465408-ORnK69HUaAKirszN1pW12XfzBGyghrB"
         access_token_secret = "WrgnSATTGPVP7yJVQvCmC0vqZtGUHAtzTgqRcmQ3Uhvyo"
@@ -155,45 +158,101 @@ class DataPresentation:
         authenticator.set_access_token(access_token, access_token_secret)
         twitter_api = tweepy.API(authenticator)
 
-        stream_listener = TwitterStreamer(file_location, twitter_api)
-        stream_listener = tweepy.Stream(auth=twitter_api.auth, listener=TwitterStreamer)
-        # stream_listener.filter(locations=[-0.510375, 51.28676, 0.334015, 51.691874])
-        stream_listener.filter(track=['python'], is_async=False)
+        stream_listener = TwitterStreamer(file_location)
+        my_twitter_stream = tweepy.Stream(auth=twitter_api.auth, listener=stream_listener)
+        my_twitter_stream.filter(locations=[-0.510375, 51.28676, 0.334015, 51.691874], is_async=True)
 
-    def process_tweets(self, file_location):
+    def process_tweets(self, file_location, filter_words=True):
         """
         Processes the tweets in the same manner as in Question 1
+        :param filter_words:
         :param file_location: Location of the tweets json
         """
         tweet_data = []
         tweets_json = open(file_location, 'r')
 
         for line in tweets_json:
+            if line == '\n':
+                continue
             try:
                 curr_tweet = json.loads(line)
                 tweet_data.append(curr_tweet['text'])
             except Exception as ex:
-                print(ex)
+                #print(ex)
                 continue
 
         parsed_tweets = []
         for dirty_tweet in tweet_data:
-            parsed_tweets.append(Tokenizer(dirty_tweet)
+            tweet_token = self.preprocess(dirty_tweet, lowercase=True)
+            parsed_tweets.append(tweet_token)
+
+        clean_tweets = []
+        term_freq = {}
+        punctuations = {'\'', '\"', '\\', '/', '`', '.', '!', ';', '&', '(', ')', ',', '?', '-', ':', '', '@'}
+        stop_words = set(stopwords.words("english"))
+        for parsed_tweet in parsed_tweets:
+            txt = ''
+            for token in parsed_tweet:
+                txt = txt + token + " "  # Todo: concatenate the dirty token or parsed token?
+                if filter_words and (token in punctuations or token in stop_words):
+                    continue
+                token = self.ps.stem(token)
+                if token not in term_freq:
+                    term_freq[token] = 1
+                else:
+                    term_freq[token] += 1
+
+            clean_tweets.append(txt)
+
+        return clean_tweets, term_freq
+
+    @staticmethod
+    def get_most_common_words(tweet_distribution):
+
+        sorted_tweets = []
+        for key, value in tweet_distribution.items():
+            sorted_tweets.append((key, value))
+
+        sorted_tweets.sort(key=operator.itemgetter(1), reverse=True)
+        return sorted_tweets
+
+    def predict_gender(self, model, parsed_tweets):
+        """
+        Receives a list of parsed tweets and predicts for each one the gender of the user
+        :param model: A classifier
+        :param parsed_tweets: A list of parsed tweets
+        :return: The prediction for each tweet.
+        """
+        prediction = {}
+        tweet_matrix = numpy.asarray(parsed_tweets)
+        predictions = model.predict_classes(parsed_tweets)
+        for tweet in parsed_tweets:
+            pass
+
 
 class TwitterStreamer(tweepy.StreamListener):
+    """
+    Listener class inheriting from tweepy's StreamListener class.
+    """
 
-    def __init__(self, tweet_file, twitter_api=None):
+    def __init__(self, tweet_file):
         super(TwitterStreamer, self).__init__()
         self.file_location = tweet_file
         self.num_of_tweets = 0
 
+    def on_connect(self):
+        print("connected")
+        return True
+
     def on_data(self, data):
-        print("Entered on data")
         if self.num_of_tweets < 15000:
             try:
                 with open(self.file_location, 'a') as tweets:
                     tweets.write(data)
                     self.num_of_tweets += 1
+                    if self.num_of_tweets % 100 == 0:
+                        print(f'Collected {self.num_of_tweets} tweets')
+
                     return True
             except BaseException as bex:
                 print("Error on_data: " + str(bex))
