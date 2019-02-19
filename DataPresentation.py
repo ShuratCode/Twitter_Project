@@ -188,13 +188,13 @@ class DataPresentation:
 
         clean_tweets = []
         term_freq = {}
-        punctuations = {'\'', '\"', '\\', '/', '`', '.', '!', ';', '&', '(', ')', ',', '?', '-', ':', '', '@'}
-        stop_words = set(stopwords.words("english"))
+        punctuation = list(string.punctuation)
+        stop_words = stopwords.words('english') + punctuation + ['rt', 'via']
         for parsed_tweet in parsed_tweets:
             txt = ''
             for token in parsed_tweet:
                 txt = txt + token + " "  # Todo: concatenate the dirty token or parsed token?
-                if filter_words and (token in punctuations or token in stop_words):
+                if filter_words and token in stop_words:
                     continue
                 token = self.ps.stem(token)
                 if token not in term_freq:
