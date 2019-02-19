@@ -228,8 +228,8 @@ class DataPresentation:
         tweet_array = numpy.asarray(parsed_tweets)
         tokenizer = Tokenizer(num_words=2000)
         tweet_matrix = tokenizer.texts_to_matrix(tweet_array, mode='binary')
-        predictions = model.predict_classes(tweet_matrix)
-
+        tokenizer.sequences_to_matrix()
+        predictions = model.predict(tweet_matrix)
         return predictions
 
     @staticmethod

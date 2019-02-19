@@ -20,7 +20,7 @@ class TrainModels:
         self.train, self.test = train_test_split(data_frame, test_size=0.2)  # split the data frame to train and test
         self.__form_to_text()
         self.__clfs = {"SVM": SGDClassifier(), "Perceptron": Perceptron()}
-        self.X_train, self.X_test = self.__tf_idf_feature_extraction()  # extract features from the training data
+        #self.X_train, self.X_test = self.__tf_idf_feature_extraction()  # extract features from the training data ToDO REMOVE THIS COMMENT
         self.Y_train, self.Y_test = self.train.gender, self.test.gender
         numpy.random.seed(7)
 
