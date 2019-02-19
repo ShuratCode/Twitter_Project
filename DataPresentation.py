@@ -218,18 +218,19 @@ class DataPresentation:
         sorted_tweets.sort(key=operator.itemgetter(1), reverse=True)
         return sorted_tweets
 
-    def predict_gender(self, model, parsed_tweets):
+    def predict_gender(self, model, parsed_tweets, tokenizer, lb_make):
         """
         Receives a list of parsed tweets and predicts for each one the gender of the user
+        :param lb_make:
+        :param tokenizer:
         :param model: A classifier
         :param parsed_tweets: A list of parsed tweets
         :return: The prediction for each tweet.
         """
         tweet_array = numpy.asarray(parsed_tweets)
-        tokenizer = Tokenizer(num_words=2000)
-        tweet_matrix = tokenizer.texts_to_matrix(tweet_array, mode='binary')
-        tokenizer.sequences_to_matrix()
-        predictions = model.predict(tweet_matrix)
+        tweet_matrix = tokenizer.texts_to_matrix(tweet_array, mode='count')
+        predictions = model.predict_classes(tweet_matrix)
+        predictions = lb_make.inverse_transform(predictions)
         return predictions
 
     @staticmethod

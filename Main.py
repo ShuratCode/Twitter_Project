@@ -34,7 +34,7 @@ if __name__ == '__main__':
         header = "tweet,prediction,confidence\n"
         res.write(header)
 
-    predictions = dp.predict_gender(model, parsed_tweets)
+    predictions = dp.predict_gender(model, parsed_tweets, tm.tokenizer, tm.lb_make)
 
     with open(results_file, 'a') as res:
         for idx in range(len(predictions)):
