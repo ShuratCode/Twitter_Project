@@ -10,7 +10,6 @@ warnings.filterwarnings('ignore')
 if __name__ == '__main__':
     dp = DataPresentation()
     data = dp.read_csv(print_graph=False)
-    """
     dp.data_to_df(data)
     dp.print_common()
     tm = TrainModels(dp.data_frame)
@@ -22,7 +21,6 @@ if __name__ == '__main__':
     most_common_countries = dp.find_most_common_country(train_data, 5)
     for country in most_common_countries:
         print(country)
-    """
     tweets_location = '.\\tweets_from_stream.json'
     #dp.collect_tweets(file_location=tweets_location)
     parsed_tweets, tweet_distribution = dp.process_tweets(tweets_location, filter_words=True)

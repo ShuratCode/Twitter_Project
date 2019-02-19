@@ -18,7 +18,6 @@ class TrainModels:
     def __init__(self, data_frame):
         self.df = data_frame
         self.train, self.test = train_test_split(data_frame, test_size=0.2)  # split the data frame to train and test
-        self.__form_to_text()
         self.__clfs = {"SVM": SGDClassifier(), "Perceptron": Perceptron()}
         #self.X_train, self.X_test = self.__tf_idf_feature_extraction()  # extract features from the training data ToDO REMOVE THIS COMMENT
         self.Y_train, self.Y_test = self.train.gender, self.test.gender
@@ -39,14 +38,6 @@ class TrainModels:
         print("DONE!!!!! total time: %fs" % duration)
         print('=' * 80)
         return vec_train, vec_test
-
-    def __form_to_text(self):
-        """
-        transform the text field in the training set to be str
-        :return:
-        """
-        for _, row in self.train.iterrows():
-            self.train['text'] = str(self.train['text'])
 
     def __benchmark(self, clf):
         """
@@ -172,10 +163,12 @@ class TrainModels:
         """
         lb_make = LabelEncoder()
         tokenizer = Tokenizer(num_words=2000)
+
         x_array_train = numpy.asarray(self.train['text'])
         x_array_test = numpy.asarray(self.test['text'])
-        x_train_matrix = tokenizer.texts_to_matrix(x_array_train, mode='binary')
-        x_test_matrix = tokenizer.texts_to_matrix(x_array_test, mode='binary')
+        tokenizer.fit_on_texts(x_array_train)
+        x_train_matrix = tokenizer.texts_to_matrix(x_array_train, mode='count')
+        x_test_matrix = tokenizer.texts_to_matrix(x_array_test, mode='count')
         y_train_numbers = lb_make.fit_transform(self.Y_train)
         y_test_numbers = lb_make.fit_transform(self.Y_test)
         y_train_matrix = keras.utils.to_categorical(y_train_numbers, 3)
