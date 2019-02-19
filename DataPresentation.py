@@ -5,6 +5,8 @@ from collections import Counter
 import pprint
 import tweepy
 import json
+
+from keras_preprocessing.text import Tokenizer
 from nltk.stem import PorterStemmer
 import pandas as pd
 import numpy
@@ -223,7 +225,9 @@ class DataPresentation:
         :param parsed_tweets: A list of parsed tweets
         :return: The prediction for each tweet.
         """
-        tweet_matrix = numpy.asarray(parsed_tweets)
+        tweet_array = numpy.asarray(parsed_tweets)
+        tokenizer = Tokenizer(num_words=2000)
+        tweet_matrix = tokenizer.texts_to_matrix(tweet_array, mode='binary')
         predictions = model.predict_classes(tweet_matrix)
 
         return predictions
