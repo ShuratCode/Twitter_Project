@@ -13,8 +13,7 @@ if __name__ == '__main__':
     dp.data_to_df(data)
     dp.print_common()
     tm = TrainModels(dp.data_frame)
-    best_model, score = tm.train_sequential()
-    #best_model = tm.train_models()
+    best_model = tm.train_models()
     print(best_model)
     best_model.save('.\\best_model.h5')
     train_data, test_data = train_test_split(data, test_size=0.2) # Find the country with the most tweets

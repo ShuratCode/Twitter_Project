@@ -22,6 +22,7 @@ class TrainModels:
         #self.X_train, self.X_test = self.__tf_idf_feature_extraction()  # extract features from the training data ToDO REMOVE THIS COMMENT
         self.Y_train, self.Y_test = self.train.gender, self.test.gender
         numpy.random.seed(7)
+        self.tokenizer = None
 
     def __tf_idf_feature_extraction(self):
         """
@@ -173,4 +174,5 @@ class TrainModels:
         y_test_numbers = lb_make.fit_transform(self.Y_test)
         y_train_matrix = keras.utils.to_categorical(y_train_numbers, 3)
         y_test_matrix = keras.utils.to_categorical(y_test_numbers, 3)
+        self.tokenizer = tokenizer
         return x_train_matrix, x_test_matrix, y_train_matrix, y_test_matrix
