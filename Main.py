@@ -3,8 +3,7 @@ import warnings
 from DataPresentation import DataPresentation
 from train_model import TrainModels
 from sklearn.model_selection import train_test_split
-from keras.models import model_from_json
-from keras.models import load_model
+from keras.models import load_model, save_model
 
 warnings.filterwarnings('ignore')
 
@@ -32,10 +31,17 @@ if __name__ == '__main__':
     #    print(f'{i+1}. {most_common[i][0]}, {most_common[i][1]} Times ')
 
     model = load_model('.\\best_model.h5')
-    with open('.\\prediction_results.csv', 'w') as f:
+    results_file = '.\\prediction_results.csv'
+    with open(results_file, 'w') as res:
         header = "tweet,prediction,confidence\n"
-        f.write(header)
+        res.write(header)
 
     predictions = dp.predict_gender(model, parsed_tweets)
 
+    with open(results_file, 'a') as res:
+        for idx in range(len(predictions)):
+            res.write(f'{parsed_tweets[idx]}, {predictions[idx]}, {idx}\n')
 
+    results = dp.aggregate_predictions(predictions)
+    for res, num in results.items():
+        print(f'Number of {res}s: {num}')

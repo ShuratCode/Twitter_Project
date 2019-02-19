@@ -223,11 +223,24 @@ class DataPresentation:
         :param parsed_tweets: A list of parsed tweets
         :return: The prediction for each tweet.
         """
-        prediction = {}
         tweet_matrix = numpy.asarray(parsed_tweets)
-        predictions = model.predict_classes(parsed_tweets)
-        for tweet in parsed_tweets:
-            pass
+        predictions = model.predict_classes(tweet_matrix)
+
+        return predictions
+
+    @staticmethod
+    def aggregate_predictions(predictions):
+
+        results = {
+            "Male": 0,
+            "Female": 0,
+            "Brand": 0
+        }
+
+        for pred in predictions:
+            results[pred] += 1
+
+        return results
 
 
 class TwitterStreamer(tweepy.StreamListener):
