@@ -150,11 +150,11 @@ class DataPresentation:
     @staticmethod
     def collect_tweets(file_location):
 
-        api_key = "GXRCrOUdw2q35n8DduLSWYCGL"
-        api_secret_key = "Ynl09Fgy07LqPVyHPkx0NlodNoqyEuP3JvCSdIR1vKseszxdM3"
+        api_key = ""
+        api_secret_key = ""
 
-        access_token = "734660944920465408-ORnK69HUaAKirszN1pW12XfzBGyghrB"
-        access_token_secret = "WrgnSATTGPVP7yJVQvCmC0vqZtGUHAtzTgqRcmQ3Uhvyo"
+        access_token = ""
+        access_token_secret = ""
 
         authenticator = tweepy.OAuthHandler(api_key, api_secret_key)
         authenticator.set_access_token(access_token, access_token_secret)
